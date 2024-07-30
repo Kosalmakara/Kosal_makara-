@@ -1,0 +1,205 @@
+using System;
+using System.Collections.Generic;
+
+class Book
+{
+    public int BookId { get; private set; }
+    public string Title { get; private set; }
+    public string Author { get; private set; }
+    public int TotalCopies { get; private set; }
+    public int BorrowedCopies { get; private set; }
+
+    public Book(int bookId, string title, string author, int totalCopies)
+    {
+        BookId = bookId;
+        Title = title;
+        Author = author;
+        TotalCopies = totalCopies;
+        BorrowedCopies = 0;
+    }
+
+    public bool Borrow()
+    {
+        if (BorrowedCopies < TotalCopies)
+        {
+            BorrowedCopies++;
+            return true;
+        }
+        return false;
+    }
+
+    public bool Return()
+    {
+        if (BorrowedCopies > 0)
+        {
+            BorrowedCopies--;
+            return true;
+        }
+        return false;
+    }
+
+    public override string ToString()
+    {
+        return $"{Title} by {Author} (ID: {BookId}) - Available Copies: {TotalCopies - BorrowedCopies}";
+    }
+}
+
+class User
+{
+    public int UserId { get; private set; }
+    public string Name { get; private set; }
+    public Dictionary<int, Book> BorrowedBooks { get; private set; }
+
+    public User(int userId, string name)
+    {
+        UserId = userId;
+        Name = name;
+        BorrowedBooks = new Dictionary<int, Book>();
+    }
+
+    public bool BorrowBook(Book book)
+    {
+        if (!BorrowedBooks.ContainsKey(book.BookId))
+        {
+            if (book.Borrow())
+            {
+                BorrowedBooks[book.BookId] = book;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public bool ReturnBook(Book book)
+    {
+        if (BorrowedBooks.ContainsKey(book.BookId))
+        {
+            if (book.Return())
+            {
+                BorrowedBooks.Remove(book.BookId);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public override string ToString()
+    {
+        var borrowedBooksStr = string.Join(", ", BorrowedBooks.Values);
+        return $"{Name} (ID: {UserId}) - Borrowed Books: {borrowedBooksStr}";
+    }
+}
+
+class Library
+{
+    private Dictionary<int, Book> books;
+    private Dictionary<int, User> users;
+
+    public Library()
+    {
+        books = new Dictionary<int, Book>();
+        users = new Dictionary<int, User>();
+    }
+
+    public bool AddBook(Book book)
+    {
+        if (!books.ContainsKey(book.BookId))
+        {
+            books[book.BookId] = book;
+            return true;
+        }
+        return false;
+    }
+
+    public bool AddUser(User user)
+    {
+        if (!users.ContainsKey(user.UserId))
+        {
+            users[user.UserId] = user;
+            return true;
+        }
+        return false;
+    }
+
+    public void BorrowBook(int userId, int bookId)
+    {
+        if (users.ContainsKey(userId) && books.ContainsKey(bookId))
+        {
+            var user = users[userId];
+            var book = books[bookId];
+            if (user.BorrowBook(book))
+            {
+                Console.WriteLine($"{user.Name} borrowed {book.Title}");
+            }
+            else
+            {
+                Console.WriteLine($"{book.Title} is not available for borrowing");
+            }
+        }
+        else
+        {
+            Console.WriteLine("User ID or Book ID not found");
+        }
+    }
+
+    public void ReturnBook(int userId, int bookId)
+    {
+        if (users.ContainsKey(userId) && books.ContainsKey(bookId))
+        {
+            var user = users[userId];
+            var book = books[bookId];
+            if (user.ReturnBook(book))
+            {
+                Console.WriteLine($"{user.Name} returned {book.Title}");
+            }
+            else
+            {
+                Console.WriteLine($"{user.Name} does not have {book.Title} borrowed");
+            }
+        }
+        else
+        {
+            Console.WriteLine("User ID or Book ID not found");
+        }
+    }
+
+    public override string ToString()
+    {
+        var booksList = string.Join("\n", books.Values);
+        var usersList = string.Join("\n", users.Values);
+        return $"Library Books:\n{booksList}\n\nLibrary Users:\n{usersList}";
+    }
+}
+
+// Example Usage
+class Program
+{
+    static void Main(string[] args)
+    {
+        var library = new Library();
+
+        // Adding books
+        var book1 = new Book(1, "1984", "George Orwell", 3);
+        var book2 = new Book(2, "To Kill a Mockingbird", "Harper Lee", 2);
+        library.AddBook(book1);
+        library.AddBook(book2);
+
+        // Adding users
+        var user1 = new User(1, "Alice");
+        var user2 = new User(2, "Bob");
+        library.AddUser(user1);
+        library.AddUser(user2);
+
+        // Borrowing and returning books
+        library.BorrowBook(1, 1);  // Alice borrows "1984"
+        library.BorrowBook(2, 2);  // Bob borrows "To Kill a Mockingbird"
+        library.BorrowBook(1, 2);  // Alice borrows "To Kill a Mockingbird"
+
+        Console.WriteLine(library);
+
+        library.ReturnBook(1, 1);  // Alice returns "1984"
+        library.ReturnBook(2, 2);  // Bob returns "To Kill a Mockingbird"
+
+        Console.WriteLine(library);
+    }
+}
